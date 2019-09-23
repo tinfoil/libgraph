@@ -41,6 +41,14 @@ defmodule Graph do
   @type edge_key :: {vertex_id, vertex_id}
   @type edge_value :: %{label => edge_weight}
   @type graph_type :: :directed | :undirected
+
+  @type info_t :: %{
+    num_edges: non_neg_integer,
+    num_vertices: non_neg_integer,
+    size_in_bytes: number,
+    type: graph_type
+  }
+
   @type t :: %__MODULE__{
           in_edges: %{vertex_id => MapSet.t()},
           out_edges: %{vertex_id => MapSet.t()},
@@ -93,7 +101,7 @@ defmodule Graph do
       ...> match?(%{type: :directed, num_vertices: 4, num_edges: 2}, Graph.info(g))
       true
   """
-  @spec info(t) :: %{num_edges: non_neg_integer, num_vertices: non_neg_integer}
+  @spec info(t) :: info_t()
   def info(%__MODULE__{type: type} = g) do
     %{
       type: type,
@@ -330,7 +338,7 @@ defmodule Graph do
       ...> Graph.a_star(g, :a, :d, fn _ -> 0 end)
       nil
   """
-  @spec a_star(t, vertex, vertex, (vertex, vertex -> integer)) :: [vertex]
+  @spec a_star(t, vertex, vertex, Graph.Pathfinding.heuristic_fun) :: [vertex] | nil
   defdelegate a_star(g, a, b, hfun), to: Graph.Pathfinding
 
   @doc """
@@ -409,29 +417,35 @@ defmodule Graph do
     v_out = Map.get(oe, v_id) || MapSet.new()
     v_all = MapSet.union(v_in, v_out)
 
-    e_in = Enum.flat_map(v_all, fn v2_id ->
-      case Map.get(meta, {v2_id, v_id}) do
-        nil -> []
-        edge_meta when is_map(edge_meta) ->
-          v2 = Map.get(vs, v2_id)
+    e_in =
+      Enum.flat_map(v_all, fn v2_id ->
+        case Map.get(meta, {v2_id, v_id}) do
+          nil ->
+            []
 
-          for {label, weight} <- edge_meta do
-            Edge.new(v2, v, label: label, weight: weight)
-          end
-      end
-    end)
+          edge_meta when is_map(edge_meta) ->
+            v2 = Map.get(vs, v2_id)
 
-    e_out = Enum.flat_map(v_all, fn v2_id ->
-      case Map.get(meta, {v_id, v2_id}) do
-        nil -> []
-        edge_meta when is_map(edge_meta) ->
-          v2 = Map.get(vs, v2_id)
+            for {label, weight} <- edge_meta do
+              Edge.new(v2, v, label: label, weight: weight)
+            end
+        end
+      end)
 
-          for {label, weight} <- edge_meta do
-            Edge.new(v, v2, label: label, weight: weight)
-          end
-      end
-    end)
+    e_out =
+      Enum.flat_map(v_all, fn v2_id ->
+        case Map.get(meta, {v_id, v2_id}) do
+          nil ->
+            []
+
+          edge_meta when is_map(edge_meta) ->
+            v2 = Map.get(vs, v2_id)
+
+            for {label, weight} <- edge_meta do
+              Edge.new(v, v2, label: label, weight: weight)
+            end
+        end
+      end)
 
     e_in ++ e_out
   end
@@ -696,9 +710,13 @@ defmodule Graph do
     {:error, {:invalid_vertex, :b}}
   """
   @spec remove_vertex_labels(t, vertex) :: t | {:error, {:invalid_vertex, vertex}}
-  def remove_vertex_labels(%__MODULE__{vertices: vertices, vertex_labels: vertex_labels} = graph, vertex) do
+  def remove_vertex_labels(
+        %__MODULE__{vertices: vertices, vertex_labels: vertex_labels} = graph,
+        vertex
+      ) do
     graph.vertex_labels
     |> Map.put(vertex, [])
+
     with vertex_id <- Graph.Utils.vertex_id(vertex),
          true <- Map.has_key?(vertices, vertex_id),
          labels <- Map.put(vertex_labels, vertex_id, []) do
@@ -1939,7 +1957,7 @@ defmodule Graph do
       ...> Graph.in_edges(g, :b)
       [%Graph.Edge{v1: :a, v2: :b, label: :foo}, %Graph.Edge{v1: :a, v2: :b}]
   """
-  @spec in_edges(t, vertex) :: Edge.t()
+  @spec in_edges(t, vertex) :: [Edge.t()]
   def in_edges(%__MODULE__{type: :undirected} = g, v) do
     edges(g, v)
   end
@@ -1995,7 +2013,7 @@ defmodule Graph do
       ...> Graph.out_edges(g, :a)
       [%Graph.Edge{v1: :a, v2: :b, label: :foo}, %Graph.Edge{v1: :a, v2: :b}]
   """
-  @spec out_edges(t, vertex) :: Edge.t()
+  @spec out_edges(t, vertex) :: [Edge.t()]
   def out_edges(%__MODULE__{type: :undirected} = g, v) do
     edges(g, v)
   end
@@ -2011,8 +2029,8 @@ defmodule Graph do
         end)
       end)
     else
-      _ -> 
-        [] 
+      _ ->
+        []
     end
   end
 
