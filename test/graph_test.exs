@@ -194,6 +194,29 @@ defmodule GraphTest do
       ["start", "start_0", 96, 97, 98, 33, 100, 34, 35, 36, 37, 19, 65, 66, 67, "end_0", "end"]
   end
 
+  test "bellman_ford for graph returns shortest paths" do
+    g = build_basic_cyclic_graph()
+
+    assert %{
+              a: [:a],
+              b: [:a, :b],
+              c: [:a, :c],
+              d: [:a, :b, :d],
+              e: [:a, :b, :d, :e]
+            } = Graph.bellman_ford(g, :a)
+  end
+
+  test "bellman_ford for complex graph using signed weights (negative and positive)" do
+    g = build_complex_signed_graph()
+    assert %{
+              :a => [:a],
+              :b => [:a, :b],
+              :c => [:a, :b, :c],
+              :d => [:a, :b, :e, :d],
+              :e => [:a, :b, :e]
+            } = Graph.bellman_ford(g, :a)
+  end
+
   test "edge undirected graph v1 > v2" do
     g = build_basic_undirected_graph()
     e1 = Graph.edge(g, :a, :b)
@@ -594,6 +617,18 @@ defmodule GraphTest do
     |> Graph.add_edge(31, 18, weight: 861)
     |> Graph.add_edge(31, 27, weight: 1178)
     |> Graph.add_edge(97, 98, weight: 13465)
+  end
+
+  defp build_complex_signed_graph do
+    Graph.new
+    |> Graph.add_edge(:a, :b, weight: -1)
+    |> Graph.add_edge(:b, :e, weight: 2)
+    |> Graph.add_edge(:e, :d, weight: -3)
+    |> Graph.add_edge(:d, :c, weight: 5)
+    |> Graph.add_edge(:a, :c, weight: 4)
+    |> Graph.add_edge(:b, :c, weight: 3)
+    |> Graph.add_edge(:b, :d, weight: 2)
+    |> Graph.add_edge(:d, :b, weight: 1)
   end
 
   defp build_complex_graph_float do
