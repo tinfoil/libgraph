@@ -43,11 +43,11 @@ defmodule Graph do
   @type graph_type :: :directed | :undirected
 
   @type info_t :: %{
-    num_edges: non_neg_integer,
-    num_vertices: non_neg_integer,
-    size_in_bytes: number,
-    type: graph_type
-  }
+          num_edges: non_neg_integer,
+          num_vertices: non_neg_integer,
+          size_in_bytes: number,
+          type: graph_type
+        }
 
   @type t :: %__MODULE__{
           in_edges: %{vertex_id => MapSet.t()},
@@ -338,8 +338,15 @@ defmodule Graph do
       ...> Graph.a_star(g, :a, :d, fn _ -> 0 end)
       nil
   """
-  @spec a_star(t, vertex, vertex, Graph.Pathfinding.heuristic_fun) :: [vertex] | nil
+  @spec a_star(t, vertex, vertex, Graph.Pathfinding.heuristic_fun()) :: [vertex] | nil
   defdelegate a_star(g, a, b, hfun), to: Graph.Pathfinding
+
+  @spec bellman_ford(t, vertex) ::
+          %{
+            optional(Graph.vertex()) => [Graph.vertex()]
+          }
+          | nil
+  defdelegate bellman_ford(g, a), to: Graph.Pathfinding
 
   @doc """
   Builds a list of paths between vertex `a` and vertex `b`.
