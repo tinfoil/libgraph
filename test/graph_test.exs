@@ -280,6 +280,26 @@ defmodule GraphTest do
            } = Graph.bellman_ford(g, :a)
   end
 
+  test "dijkstra/2 for graph returns shortest paths" do
+    g = build_basic_cyclic_graph()
+
+    assert %{
+             a: [:a],
+             b: [:a, :b],
+             c: [:a, :c],
+             d: [:a, :b, :d],
+             e: [:a, :b, :d, :e]
+           } = Graph.dijkstra(g, :a)
+  end
+
+  test "dijkstra/2 for complex graph using float weights" do
+    g = build_complex_graph_float()
+    g_shortest_paths = Graph.dijkstra(g, "start")
+
+    assert not is_nil(g_shortest_paths)
+    assert g_shortest_paths != []
+  end
+
   test "edge undirected graph v1 > v2" do
     g = build_basic_undirected_graph()
     e1 = Graph.edge(g, :a, :b)

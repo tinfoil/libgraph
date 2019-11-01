@@ -8,16 +8,15 @@ defmodule Graph.Pathfindings.Dijkstra do
 
   @compile {:inline, do_bfs: 4, construct_path: 3, construct_path: 4, calculate_cost: 4}
   @doc """
-  Finds the shortest path between `a` and all other vertices as a map from vertex to path.
-  Returns `nil` if no path can be found.
+  Finds the shortest path between `a` and all other reachable vertices, returning a map from vertex to path.
+  Returns `nil` if no paths can be found.
 
   The shortest path is calculated here by using a cost function to choose
   which path to explore next. The cost function in Dijkstra's algorithm is
   `weight(E(A, B))+lower_bound(E(A, B))` where `lower_bound(E(A, B))` is always 0.
   """
-  @spec dijkstra(Graph.t(), Graph.vertex()) ::
-          %{optional(Graph.vertex()) => [Graph.vertex()]} | nil
-  def dijkstra(%Graph{} = g, a) do
+  @spec call(Graph.t(), Graph.vertex()) :: %{optional(Graph.vertex()) => [Graph.vertex()]} | nil
+  def call(%Graph{} = g, a) do
     a_star(g, a, fn _v -> 0 end)
   end
 
@@ -196,14 +195,11 @@ defmodule Graph.Pathfindings.Dijkstra do
          %Graph{vertices: vertices_spt} = shortest_path_tree,
          vertices
        ) do
-    vertices_spt
-    |> Flow.from_enumerable()
-    |> Flow.map(fn {v_id_spt, v_id} ->
+    Enum.reduce(vertices_spt, %{}, fn {v_id_spt, v_id}, acc ->
       path = construct_path(v_id_spt, vertices, shortest_path_tree)
       vertex = Map.get(vertices, v_id)
 
-      {vertex, path}
+      Map.put(acc, vertex, path)
     end)
-    |> Enum.into(%{})
   end
 end
