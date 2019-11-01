@@ -7,6 +7,18 @@ defmodule Graph.Pathfinding do
   @type heuristic_fun :: (Graph.vertex() -> integer)
 
   @doc """
+  Finds the shortest path between `a` and all other vertices as a map from vertex to path.
+  Returns `nil` if no path can be found.
+
+  The shortest path is calculated here by using a cost function to choose
+  which path to explore next. The cost function in Dijkstra's algorithm is
+  `weight(E(A, B))+lower_bound(E(A, B))` where `lower_bound(E(A, B))` is always 0.
+  """
+  @spec dijkstra(Graph.t(), Graph.vertex()) ::
+          %{optional(Graph.vertex()) => [Graph.vertex()]} | nil
+  def dijkstra(g, a), do: Graph.Pathfindings.Dijkstra.call(g, a)
+
+  @doc """
   Finds the shortest path between `a` and `b` as a list of vertices.
   Returns `nil` if no path can be found.
 

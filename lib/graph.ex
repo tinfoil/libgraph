@@ -349,6 +349,18 @@ defmodule Graph do
   defdelegate bellman_ford(g, a), to: Graph.Pathfinding
 
   @doc """
+  Finds the shortest path between `a` and all other reachable vertices, returning a map from vertex to path.
+  Returns `nil` if no paths can be found.
+
+  The shortest path is calculated here by using a cost function to choose
+  which path to explore next. The cost function in Dijkstra's algorithm is
+  `weight(E(A, B))+lower_bound(E(A, B))` where `lower_bound(E(A, B))` is always 0.
+  """
+  @spec dijkstra(Graph.t(), Graph.vertex()) ::
+          %{optional(Graph.vertex()) => [Graph.vertex()]} | nil
+  defdelegate dijkstra(g, a), to: Graph.Pathfinding
+
+  @doc """
   Builds a list of paths between vertex `a` and vertex `b`.
 
   The algorithm used here is a depth-first search, which evaluates the whole
